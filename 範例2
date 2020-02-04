@@ -1,0 +1,82 @@
+class Scene_Menu < Scene_MenuBase
+  
+  alias pc27_scene_menu_start start
+  def start
+    pc27_scene_menu_start
+    create_sub_menu_window
+    @sub_menu_window.hide.deactivate
+  end
+
+  def create_command_window
+    @command_window = Window_MenuCommand.new
+    @command_window.set_handler(:item,      method(:command_item))
+    @command_window.set_handler(:char,      method(:command_personal))
+    @command_window.set_handler(:formation, method(:command_formation))
+    @command_window.set_handler(:save,      method(:command_save))
+    @command_window.set_handler(:game_end,  method(:command_game_end))
+    @command_window.set_handler(:cancel,    method(:return_scene))
+  end
+  
+  def create_sub_menu_window
+    @sub_menu_window = Window_SubCommand.new(0, 200)
+    @sub_menu_window.set_handler(:call_skill,  method(:call_skill))
+    @sub_menu_window.set_handler(:call_equip,  method(:call_equip))
+    @sub_menu_window.set_handler(:call_status, method(:call_status))
+    @sub_menu_window.set_handler(:cancel,      method(:cancel_sub))
+  end
+  
+  alias pc_scene_menu_on_personal_ok on_personal_ok
+  def on_personal_ok
+    pc_scene_menu_on_personal_ok
+    case @command_window.current_symbol
+    when :char
+      @sub_menu_window.select(0)
+      @sub_menu_window.show.activate
+    end
+  end
+
+  def call_skill
+    SceneManager.call(Scene_Skill)
+  end
+  
+  def call_equip
+    SceneManager.call(Scene_Equip)
+  end
+  
+  def call_status
+    SceneManager.call(Scene_Status)
+  end
+  
+  def cancel_sub
+    @sub_menu_window.deactivate.hide
+    @status_window.select_last
+    @status_window.activate
+  end
+  
+end
+
+class Window_SubCommand < Window_Command
+  
+  def initialize(x, y)
+    super(x, y)
+    hide
+  end
+
+  
+  def make_command_list
+    add_command(Vocab::skill,  :call_skill)
+    add_command(Vocab::equip,  :call_equip)
+    add_command(Vocab::status, :call_status)
+  end
+  
+end
+
+
+class Window_MenuCommand < Window_Command
+  
+  def add_main_commands
+    add_command(Vocab::item,   :item,   main_commands_enabled)
+    add_command("Character",   :char,   main_commands_enabled)
+  end
+  
+end 
