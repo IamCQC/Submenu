@@ -1,0 +1,296 @@
+#==============================================================================
+# ■ Scene_Menu
+#==============================================================================
+
+class Scene_Menu < Scene_MenuBase
+  #--------------------------------------------------------------------------
+  # ● 開始処理
+  #--------------------------------------------------------------------------
+  def start
+    super
+    @header_sprite.set_menu(:top)
+    create_command_window
+    create_party_info_window
+    create_status_window
+    create_place_window
+    setup_keyhelp_main
+    Graphics.frame_reset
+  end
+  #--------------------------------------------------------------------------
+  # ● コマンドウィンドウの作成
+  #--------------------------------------------------------------------------
+  def create_command_window
+    @command_window = Window_MenuCommand.new(@header_sprite)
+    @command_window.set_handler(:item,      method(:command_item))
+    @command_window.set_handler(:skill,     method(:command_personal))
+    @command_window.set_handler(:equip,     method(:command_personal))
+    @command_window.set_handler(:status,    method(:command_formation))
+    @command_window.set_handler(:story,  method(:command_personal))
+    #@command_window.set_handler(:status,    method(:command_personal))
+    @command_window.set_handler(:config,    method(:command_config))
+    @command_window.set_handler(:journal,    method(:command_journal))
+    @command_window.set_handler(:save,      method(:command_save))
+    @command_window.set_handler(:system,  method(:command_system))
+    @command_window.set_handler(:cook,  method(:command_cook))
+    #@command_window.set_handler(:story,  method(:command_story))
+    #@command_window.set_handler(:illustrate,  method(:command_Illustrated))
+    @command_window.set_handler(:cancel,    method(:return_scene))
+    @command_window.y = CONTENT_RECT.y
+    @command_window.select(@command_window.index)
+  end
+  #--------------------------------------------------------------------------
+  # ○ パーティ情報ウィンドウの作成
+  #--------------------------------------------------------------------------
+  def create_party_info_window
+    @party_info_window = Window_MenuPartyInfo.new
+    @party_info_window.x = CONTENT_RECT.x
+    @party_info_window.y =
+      CONTENT_RECT.y + CONTENT_RECT.height - @party_info_window.height
+  end
+  #--------------------------------------------------------------------------
+  # ● ステータスウィンドウの作成
+  #--------------------------------------------------------------------------
+  def create_status_window
+    @status_window = Window_MenuStatus.new(0, 0)
+    @status_window.x = Graphics.width - @status_window.width
+    @status_window.y =
+      CONTENT_RECT.y + CONTENT_RECT.height - @status_window.height
+  end
+  #--------------------------------------------------------------------------
+  # ○ 現在地ウィンドウの作成
+  #--------------------------------------------------------------------------
+  def create_place_window
+    @place_window = Window_MenuPlace.new
+    @place_window.x = @status_window.x + 24
+    @place_window.y = CONTENT_RECT.y - 30
+  end
+  #--------------------------------------------------------------------------
+  # ○ シーン突入時のアニメ実行
+  #--------------------------------------------------------------------------
+  def animate_windows_enter
+    super
+    @command_window.slide_in(Direction::RIGHT, 4)
+    @party_info_window.slide_in(Direction::RIGHT, 4)
+    @status_window.slide_in(Direction::LEFT, 8)
+    @place_window.slide_in(Direction::LEFT, 8)
+  end
+  #--------------------------------------------------------------------------
+  # ● コマンド［アイテム］
+  #--------------------------------------------------------------------------
+  def command_item
+    @header_sprite.set_menu(:item2)
+    call_menu_scene(Scene_Item)
+  end
+  #--------------------------------------------------------------------------
+  # ● コマンド［スキル］［装備］
+  #--------------------------------------------------------------------------
+  alias command_personal_LMAE_Scene_Menu command_personal
+  def command_personal
+    command_personal_LMAE_Scene_Menu
+
+    setup_keyhelp_personal
+  end
+  #--------------------------------------------------------------------------
+  # ○ コマンド［ステータス］［並び替え］
+  #--------------------------------------------------------------------------
+  def command_formation
+    @status_window.select_last
+    @status_window.activate
+    @status_window.set_handler(:ok,     method(:on_formation_ok))
+    @status_window.set_handler(:cancel, method(:on_formation_cancel))
+
+    setup_keyhelp_formation
+  end
+  #--------------------------------------------------------------------------
+  # ○ 遊戲設定
+  #--------------------------------------------------------------------------
+  def command_config
+    @header_sprite.set_menu(:config)
+    call_menu_scene(Scene_Config)
+  end
+    #--------------------------------------------------------------------------
+  # ○ 任務清單
+  #--------------------------------------------------------------------------
+  def command_journal
+    @header_sprite.set_menu(:journal)
+    call_menu_scene(Scene_QuestList)
+  end
+    #--------------------------------------------------------------------------
+  # ○ 烹飪手冊
+  #--------------------------------------------------------------------------
+  def command_cook
+    @header_sprite.set_menu(:cook)
+    call_menu_scene(Scene_Cooking)
+  end
+   #--------------------------------------------------------------------------
+  # ○ 故事手冊
+  #--------------------------------------------------------------------------
+  def command_story
+    @header_sprite.set_menu(:story)
+    call_menu_scene(Scene_Notebook)
+  end
+      #--------------------------------------------------------------------------
+  # ○ 圖鑑合輯
+  #--------------------------------------------------------------------------
+  def command_Illustrated
+    @header_sprite.set_menu(:illustrate)
+    call_menu_scene(Scene_Options)
+  end
+  #--------------------------------------------------------------------------
+  # ● 遊戲保存
+  #--------------------------------------------------------------------------
+  def command_save
+    @header_sprite.set_menu(:save)
+    call_menu_scene(Scene_Save)
+  end
+  #--------------------------------------------------------------------------
+  # ● 遊戲結束
+  #--------------------------------------------------------------------------
+  def command_system
+    @header_sprite.set_menu(:system2)
+    call_menu_scene(Scene_End)
+  end
+  #--------------------------------------------------------------------------
+  # ● 個人コマンド［決定］
+  #--------------------------------------------------------------------------
+  def on_personal_ok
+    case @command_window.current_symbol
+    when :skill
+      @header_sprite.set_menu(:skill2)
+      call_menu_scene(Scene_Skill)
+    when :equip
+      @header_sprite.set_menu(:equip2)
+      call_menu_scene(Scene_Equip)
+    when :status
+      @header_sprite.set_menu(:status2)
+      call_menu_scene(Scene_Status)
+      when :story
+      @header_sprite.set_menu(:story2)
+      call_menu_scene(Scene_Class)
+    end
+  end
+  #--------------------------------------------------------------------------
+  # ● 個人コマンド［終了］
+  #--------------------------------------------------------------------------
+  alias on_personal_cancel_LMAE_Scene_Menu on_personal_cancel
+  def on_personal_cancel
+    on_personal_cancel_LMAE_Scene_Menu
+
+    setup_keyhelp_main
+  end
+  #--------------------------------------------------------------------------
+  # ● 並び替え［決定］
+  #--------------------------------------------------------------------------
+  def on_formation_ok
+    if @status_window.pending_index >= 0
+      # 並び替え
+      $game_party.swap_order(@status_window.index,
+                             @status_window.pending_index)
+      @status_window.pending_index = -1
+      @status_window.redraw_item(@status_window.index)
+      @status_window.decide_effect
+      @status_window.activate
+      setup_keyhelp_formation
+    else
+      # ステータス
+      @header_sprite.set_menu(:status2)
+      call_menu_scene(Scene_Status)
+    end
+  end
+  #--------------------------------------------------------------------------
+  # ● 並び替え［キャンセル］
+  #--------------------------------------------------------------------------
+  def on_formation_cancel
+    if @status_window.pending_index >= 0
+      @status_window.pending_index = -1
+      @status_window.activate
+      setup_keyhelp_formation
+    else
+      @status_window.unselect
+      @command_window.activate
+      setup_keyhelp_main
+    end
+  end
+  #--------------------------------------------------------------------------
+  # ○ メイン画面のキーヘルプ
+  #--------------------------------------------------------------------------
+  def setup_keyhelp_main
+    @keyhelp_sprite.clear
+    @keyhelp_sprite.set(:RIGHT, "隊伍列表")
+    @keyhelp_sprite.set(:Z,     "決定")
+    @keyhelp_sprite.set(:X,     "返回")
+    @keyhelp_sprite.refresh
+  end
+  #--------------------------------------------------------------------------
+  # ○ キャラ選択時のキーヘルプ
+  #--------------------------------------------------------------------------
+  def setup_keyhelp_personal
+    @keyhelp_sprite.clear
+    @keyhelp_sprite.set(:Z, "決定")
+    @keyhelp_sprite.set(:X, "取消")
+    @keyhelp_sprite.refresh
+  end
+  #--------------------------------------------------------------------------
+  # ○ ステータス参照時のキーヘルプ
+  #--------------------------------------------------------------------------
+  def setup_keyhelp_formation
+    @keyhelp_sprite.clear
+    @keyhelp_sprite.set(:A,          "更換隊伍")
+    @keyhelp_sprite.set(:Z,          "決定")
+    @keyhelp_sprite.set([:LEFT, :X], "取消")
+    @keyhelp_sprite.refresh
+  end
+  #--------------------------------------------------------------------------
+  # ○ 並び替え待機時のキーヘルプ
+  #--------------------------------------------------------------------------
+  def setup_keyhelp_formation_pending
+    @keyhelp_sprite.clear
+    @keyhelp_sprite.set([:A, :Z], "決定")
+    @keyhelp_sprite.set(:X,       "取消")
+    @keyhelp_sprite.refresh
+  end
+  #--------------------------------------------------------------------------
+  # ● フレーム更新
+  #--------------------------------------------------------------------------
+  def update
+    super
+    update_input
+  end
+  #--------------------------------------------------------------------------
+  # ○ キー入力更新
+  #--------------------------------------------------------------------------
+  def update_input
+    if @command_window.active
+      if Input.trigger?(:RIGHT)
+        # 並び替え、ステータス参照開始
+        Sound.play_ok
+        @command_window.decide_effect
+        @command_window.select_symbol(:status)
+        @command_window.deactivate
+        command_formation
+      end
+    elsif @status_window.active
+      if @status_window.pending_index >= 0
+        if Input.trigger?(:A)
+          # 並び替え確定
+          Sound.play_ok
+          on_formation_ok
+        end
+      else
+        if Input.trigger?(:LEFT)
+          # 並び替え、ステータス参照をキャンセルしてメインコマンドへ
+          Sound.play_cancel
+          @status_window.deactivate
+          on_formation_cancel
+        elsif Input.trigger?(:A)
+          # 並び替え開始
+          Sound.play_ok 
+          @status_window.decide_effect
+          @status_window.pending_index = @status_window.index
+          @status_window.activate
+          setup_keyhelp_formation_pending
+        end
+      end
+    end
+  end
+end
