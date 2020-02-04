@@ -1,0 +1,472 @@
+#==============================================================================
+# □ Sprite_MenuCommand
+#------------------------------------------------------------------------------
+# 　メニュー画面のメインコマンド用スプライトです。
+#==============================================================================
+
+module LMAE_MenuCommand
+  # コマンド選択画像 (Graphics/Menu)
+  MENU_SELECT_IMAGE = "MenuSelect"
+end
+
+class Sprite_MenuCommand
+  #--------------------------------------------------------------------------
+  # ○ 定数
+  #--------------------------------------------------------------------------
+  ANIM_DURATION = 40
+  #--------------------------------------------------------------------------
+  # ○ オブジェクト初期化
+  #--------------------------------------------------------------------------
+  def initialize(viewport = nil)
+    @command  = :unknown
+    @enabled  = true
+    @viewport = viewport
+    @duration = -1
+    @icon_sprite    = Sprite.new(viewport)
+    @text_ja_sprite = Sprite.new(viewport)
+    @text_en_sprite = Sprite.new(viewport)
+
+    @icon_sprite.bitmap = Cache.menu(LMAE_Menu::COMMAND_ICON_FILE)
+    update_opacity
+  end
+  #--------------------------------------------------------------------------
+  # ○ オブジェクト解放
+  #--------------------------------------------------------------------------
+  def dispose
+    @icon_sprite.dispose
+    @text_ja_sprite.dispose
+    @text_en_sprite.dispose
+  end
+  #--------------------------------------------------------------------------
+  # ○ ビューポート設定
+  #--------------------------------------------------------------------------
+  def viewport=(new_viewport)
+    @icon_sprite.viewport    = new_viewport
+    @text_ja_sprite.viewport = new_viewport
+    @text_en_sprite.viewport = new_viewport
+  end
+  #--------------------------------------------------------------------------
+  # ○ X 座標取得
+  #--------------------------------------------------------------------------
+  def x
+    @icon_sprite.x
+  end
+  #--------------------------------------------------------------------------
+  # ○ X 座標設定
+  #--------------------------------------------------------------------------
+  def x=(new_x)
+    @icon_sprite.x    = new_x
+    @text_ja_sprite.x = new_x + @icon_sprite.width - 4
+    @text_en_sprite.x = @text_ja_sprite.x
+    update_position
+  end
+  #--------------------------------------------------------------------------
+  # ○ Y 座標取得
+  #--------------------------------------------------------------------------
+  def y
+    @icon_sprite.y
+  end
+  #--------------------------------------------------------------------------
+  # ○ Y 座標設定
+  #--------------------------------------------------------------------------
+  def y=(new_y)
+    @icon_sprite.y    = new_y
+    @text_ja_sprite.y = new_y - 4
+    @text_en_sprite.y = @text_ja_sprite.y
+    update_position
+  end
+  #--------------------------------------------------------------------------
+  # ○ 幅取得
+  #--------------------------------------------------------------------------
+  def width
+    @icon_sprite.width + @text_ja_sprite.width 
+  end
+  #--------------------------------------------------------------------------
+  # ○ 高さ取得
+  #--------------------------------------------------------------------------
+  def height
+    #@icon_sprite.height
+    @icon_sprite.height * 0.9
+    # 命令選單的間隔
+  end
+  #--------------------------------------------------------------------------
+  # ○ 可視状態取得
+  #--------------------------------------------------------------------------
+  def visible
+    @icon_sprite.visible
+  end
+  #--------------------------------------------------------------------------
+  # ○ 不透明度取得
+  #--------------------------------------------------------------------------
+  def opacity
+    @icon_sprite.opacity
+  end
+  #--------------------------------------------------------------------------
+  # ○ 可視状態設定
+  #--------------------------------------------------------------------------
+  def visible=(new_visible)
+    @icon_sprite.visible    = new_visible
+    @text_ja_sprite.visible = new_visible
+    @text_en_sprite.visible = new_visible
+  end
+  #--------------------------------------------------------------------------
+  # ○ 不透明度設定
+  #--------------------------------------------------------------------------
+  def opacity=(new_opacity)
+    @icon_sprite.opacity    = new_opacity
+    @text_ja_sprite.opacity = new_opacity
+    @text_en_sprite.opacity = new_opacity
+    update_opacity
+  end
+  #--------------------------------------------------------------------------
+  # ○ コマンドの設定
+  #--------------------------------------------------------------------------
+  def set_command(command, enabled = true)
+    @command = command
+    @enabled = enabled
+    refresh
+  end
+  #--------------------------------------------------------------------------
+  # ○ フレーム更新
+  #--------------------------------------------------------------------------
+  def update
+    @icon_sprite.update
+    @text_ja_sprite.update
+    @text_en_sprite.update
+
+    if @duration >= 0
+      @duration -= 1
+      update_position
+      update_opacity
+    end
+  end
+  #--------------------------------------------------------------------------
+  # ○ リフレッシュ
+  #--------------------------------------------------------------------------
+  def refresh
+    setup_icon
+    setup_text
+    self.opacity = @enabled ? 255 : 128
+  end
+  #--------------------------------------------------------------------------
+  # ○ アニメーション実行
+  #--------------------------------------------------------------------------
+  def animate
+    @duration = ANIM_DURATION
+  end
+  #--------------------------------------------------------------------------
+  # ○ アニメーションをキャンセル
+  #--------------------------------------------------------------------------
+  def cancel_animation
+    @duration = 0
+  end
+  #--------------------------------------------------------------------------
+  # ○ ビットマップに描画
+  #--------------------------------------------------------------------------
+  def draw_to_bitmap(dst_bitmap, dx = nil, dy = nil)
+    return unless visible && opacity > 0
+
+    @icon_sprite.draw_to_bitmap(dst_bitmap, dx, dy)
+    @text_ja_sprite.draw_to_bitmap(dst_bitmap, dx, dy)
+    @text_en_sprite.draw_to_bitmap(dst_bitmap, dx, dy)
+  end
+
+  private
+  #--------------------------------------------------------------------------
+  # ○ アイコンのセットアップ
+  #--------------------------------------------------------------------------
+  def setup_icon
+    @icon_sprite.src_rect = LMAE_Menu.command_icon_rect(@command)
+  end
+  #--------------------------------------------------------------------------
+  # ○ テキストのセットアップ
+  #--------------------------------------------------------------------------
+  def setup_text
+    text_bitmap = LMAE_Menu.command_text_bitmap(@command)
+    @text_ja_sprite.bitmap = text_bitmap
+    @text_ja_sprite.src_rect.height = text_bitmap.height / 2
+
+    @text_en_sprite.bitmap = text_bitmap
+    @text_en_sprite.src_rect.y      = text_bitmap.height / 2
+    @text_en_sprite.src_rect.height = text_bitmap.height / 2
+  end
+  #--------------------------------------------------------------------------
+  # ○ 表示位置更新
+  #--------------------------------------------------------------------------
+  def update_position
+    case @duration
+    when 25..40
+      # jp -> en 切り替え
+      off_x = (40 - @duration) / 2
+    when 15..24
+      # en 表示中
+      off_x = 8
+    when 0..14
+      # en -> jp 切り替え
+      off_x = @duration / 2
+    else
+      # アニメ更新中でない
+      off_x = 0
+    end
+
+    base_x = @icon_sprite.x + @icon_sprite.width
+    @text_ja_sprite.x = base_x + off_x
+    @text_en_sprite.x = base_x + off_x
+  end
+  #--------------------------------------------------------------------------
+  # ○ 不透明度の更新
+  #--------------------------------------------------------------------------
+  def update_opacity
+    case @duration
+    when 25..40
+      # jp -> en 切り替え
+      ja_op = (@duration - 25) * 255 / 15
+    when 15..24
+      # en 表示中
+      ja_op = 0
+    when 0..14
+      # en -> jp 切り替え
+      ja_op = (15 - @duration) * 255 / 15
+    else
+      # アニメ更新中でない
+      ja_op = 255
+    end
+
+    @text_ja_sprite.opacity = ja_op * opacity / 255
+    @text_en_sprite.opacity = (ja_op - 255).abs * opacity / 255
+  end
+end
+
+#==============================================================================
+# ■ Window_MenuCommand
+#==============================================================================
+
+class Window_MenuCommand < Window_Command
+  #--------------------------------------------------------------------------
+  # ● コマンド選択位置の初期化（クラスメソッド）
+  #--------------------------------------------------------------------------
+  def self.init_command_position(force = true)
+    if !class_variable_defined?(:@@last_command_symbol)
+      # 初回は必ず初期化
+      @@last_command_symbol = nil
+    elsif force || !$game_system.remember_cursor
+      @@last_command_symbol = nil
+    end
+  end
+  #--------------------------------------------------------------------------
+  # ● オブジェクト初期化
+  #--------------------------------------------------------------------------
+  def initialize(header)
+    @sprites       = []
+    @header_sprite = header
+    @last_index    = -1
+    create_back_sprite
+
+    super(0, 0)
+
+    self.windowskin = nil
+    @sprites.each { |sprite| sprite.cancel_animation }
+
+    select_last
+  end
+  #--------------------------------------------------------------------------
+  # ○ オブジェクト解放
+  #--------------------------------------------------------------------------
+  def dispose
+    dispose_sprites
+    @back_sprite.dispose
+    super
+  end
+  #--------------------------------------------------------------------------
+  # ○ コマンドスプライトの破棄
+  #--------------------------------------------------------------------------
+  def dispose_sprites
+    @sprites.each { |sprite| sprite.dispose }
+    @sprites.clear
+  end
+  #--------------------------------------------------------------------------
+  # ○ ビューポートの設定
+  #--------------------------------------------------------------------------
+  def viewport=(new_viewport)
+    super
+    @sprites.each { |sprite| sprite.viewport = new_viewport }
+    @back_sprite.viewport = new_viewport
+  end
+  #--------------------------------------------------------------------------
+  # ○ X 座標の設定
+  #--------------------------------------------------------------------------
+  def x=(new_x)
+    super
+    update_sprite_position
+  end
+  #--------------------------------------------------------------------------
+  # ○ Y 座標の設定
+  #--------------------------------------------------------------------------
+  def y=(new_y)
+    super
+    update_sprite_position
+  end
+  #--------------------------------------------------------------------------
+  # ○ 背景スプライトの作成
+  #--------------------------------------------------------------------------
+  def create_back_sprite
+    @back_sprite = Sprite.new
+    @back_sprite.bitmap = Cache.menu(LMAE_MenuCommand::MENU_SELECT_IMAGE)
+    @back_sprite.blend_type = 1
+    @back_sprite.opacity    = 192
+  end
+  #--------------------------------------------------------------------------
+  # ● 項目の選択
+  #--------------------------------------------------------------------------
+  def select(index)
+    super
+
+    return unless index
+    return if index < 0 || index >= @sprites.count
+
+    unless @sprites.nil?
+      @sprites[index].animate
+    end
+
+    unless @header_sprite.nil?
+      @header_sprite.set_help(@list[index][:symbol])
+      @header_sprite.refresh
+    end
+  end
+  #--------------------------------------------------------------------------
+  # ○ カーソル位置の設定
+  #--------------------------------------------------------------------------
+#  def index=(index)
+#    super
+#
+#    if !@sprites.nil? && index >= 0 && index < @sprites.count
+#      @sprites[index].animate
+#    end
+#  end
+  #--------------------------------------------------------------------------
+  # ● コマンドリストの作成
+  #--------------------------------------------------------------------------
+  def make_command_list
+    dispose_sprites
+    add_main_commands
+    add_original_commands
+   # add_save_command
+    add_game_end_command
+  end
+  #--------------------------------------------------------------------------
+  # ● 主要コマンドをリストに追加
+  #--------------------------------------------------------------------------
+  def add_main_commands
+    add_command(Vocab::item,   :item,    main_commands_enabled)
+    add_command(Vocab::skill,  :skill,   main_commands_enabled)
+    add_command(Vocab::equip,  :equip,   main_commands_enabled)
+    add_command(Vocab::status, :status,  main_commands_enabled)
+    #add_command(Vocab::mana,   :unknown, false)
+  end
+  #--------------------------------------------------------------------------
+  # ● 独自コマンドの追加用
+  #--------------------------------------------------------------------------
+  def add_original_commands
+    #add_command(Vocab::config, :config)
+    #add_command(Vocab::equip, :journal)
+    add_command(Vocab::config, :story)
+    #add_command(Vocab::config, :illustrate)
+    #add_command(Vocab::journal, :journal)
+  end
+  #--------------------------------------------------------------------------
+  # ● ゲーム終了をコマンドリストに追加
+  #--------------------------------------------------------------------------
+  def add_game_end_command
+    add_command(Vocab::game_end, :system)
+  end
+  #--------------------------------------------------------------------------
+  # ● 項目を描画する矩形の取得
+  #--------------------------------------------------------------------------
+  def item_rect(index)
+    if index >= 0 && @sprites.count > index
+      rect = Rect.new(padding, 0, 0, 0)
+      rect.width  = @sprites[index].width
+      rect.height = @sprites[index].height
+      rect.y      = rect.height * index - padding
+    else
+      rect = Rect.new(padding, padding, 24, 24)
+    end
+
+    rect
+  end
+  #--------------------------------------------------------------------------
+  # ○ スプライト座標の更新
+  #--------------------------------------------------------------------------
+  def update_sprite_position
+    return if disposed?
+
+    dx = x + 20
+    dy = y
+    @sprites.each do |sprite|
+      sprite.x = dx
+      sprite.y = dy
+      dy += sprite.height
+    end
+
+    update_back_sprite_position
+  end
+  #--------------------------------------------------------------------------
+  # ○ 背景スプライトの位置更新
+  #--------------------------------------------------------------------------
+  def update_back_sprite_position
+    return if index < 0 || @sprites.size <= index
+
+    @back_sprite.x = x
+    @back_sprite.y = @sprites[index].y - 4
+  end
+  #--------------------------------------------------------------------------
+  # ● コマンドの追加
+  #     name    : コマンド名
+  #     symbol  : 対応するシンボル
+  #     enabled : 有効状態フラグ
+  #     ext     : 任意の拡張データ
+  #--------------------------------------------------------------------------
+  def add_command(name, symbol, enabled = true, ext = nil)
+    super
+
+    # スプライトの追加
+    sprite = Sprite_MenuCommand.new
+    sprite.set_command(symbol, enabled)
+    @sprites << sprite
+    update_sprite_position
+  end
+  #--------------------------------------------------------------------------
+  # ● 項目の描画
+  #--------------------------------------------------------------------------
+  def draw_item(index)
+    # 何もしない
+    index
+  end
+  #--------------------------------------------------------------------------
+  # ● フレーム更新
+  #--------------------------------------------------------------------------
+  def update
+    super
+
+    @sprites.each { |sprite| sprite.update }
+
+    if index >= 0 && @last_index != index
+      @last_index = index
+      update_back_sprite_position
+    end
+  end
+  #--------------------------------------------------------------------------
+  # ● リフレッシュ
+  #--------------------------------------------------------------------------
+  def refresh
+    super
+  end
+  #--------------------------------------------------------------------------
+  # ○ ビットマップに描画
+  #     visible は選別時にチェックしているのでチェック不要
+  #--------------------------------------------------------------------------
+  def draw_to_bitmap(dst_bitmap, dx = nil, dy = nil)
+    @back_sprite.draw_to_bitmap(dst_bitmap, dx, dy)
+    @sprites.each { |sprite| sprite.draw_to_bitmap(dst_bitmap, dx, dy) }
+  end
+end
